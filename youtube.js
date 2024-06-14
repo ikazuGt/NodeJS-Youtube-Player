@@ -110,7 +110,7 @@ class AudioPlayer {
       //Kenapa Pake REGEX(Regular Expression)? Kalo gk pake regex malah error gara gara kalo judulnya ada simbolnya
 
      // Download audio using youtube-dl with the correct output template
-      exec(`youtube-dl -x --audio-format flac -o "${this.audioFilePath}.%(ext)s" ${this.url}`, (err, stdout, stderr) => {
+      exec(`youtube-dl -x --audio-format wav -o "${this.audioFilePath}.%(ext)s" ${this.url}`, (err, stdout, stderr) => {
         if (err) {
           console.error('Error downloading audio:', stderr);
           return;
@@ -118,12 +118,12 @@ class AudioPlayer {
 
         console.log('Audio downloaded:', stdout);
 
-        this.downloadedAudioFilePath = `${this.audioFilePath}.flac`;
+        this.downloadedAudioFilePath = `${this.audioFilePath}.wav`;
 
-        // Use ffmpeg to convert the FLAC file to PCM format and play through speaker
+
         this.ffmpegProcess = ffmpeg(this.downloadedAudioFilePath)
           .audioCodec('pcm_s16le')
-          .format('s16le')
+          .format('wav')
           .audioBitrate(256)
           .audioFrequency(44100)
           .on('start', () => {
