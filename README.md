@@ -2,7 +2,15 @@ How to use
 
 Install all the library in the require section
 
-Create a new file
+```javascript
+npm install axios
+npm install ytdl-core
+npm install fluent-ffmpeg
+npm install speaker
+npm install youtube-scrapper
+``
+
+Create a new file, you can name it anything like for example Index.js
 ```javascript
 const youtube = require("./youtube");
 
