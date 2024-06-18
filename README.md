@@ -43,7 +43,7 @@ const AudioPlayer = new youtube.AudioPlayer();
 ```
 
 
-
+-----------------
 
 
 Detailed Usage:
