@@ -28,6 +28,8 @@ const AudioPlayer = new youtube.AudioPlayer();
 })();
 ```
 
+
+
 Example:
 
 ```javascript
@@ -41,7 +43,11 @@ const AudioPlayer = new youtube.AudioPlayer();
 ```
 
 
+
+
+
 Detailed Usage:
+
 
 Playing an Audio (Via streaming)
 ```javascript
