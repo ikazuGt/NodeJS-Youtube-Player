@@ -2,13 +2,13 @@ How to use
 
 Install all the library in the require section
 
-```javascript
+```batch
 npm install axios
 npm install ytdl-core
 npm install fluent-ffmpeg
 npm install speaker
 npm install youtube-scrapper
-``
+```
 
 Create a new file, you can name it anything like for example Index.js
 ```javascript
