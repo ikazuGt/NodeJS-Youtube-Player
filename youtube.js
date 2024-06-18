@@ -3,7 +3,6 @@ const ytdl = require('ytdl-core'); //Buat ambil Format dari audio
 const ffmpeg = require('fluent-ffmpeg'); //Convert audio data ke Raw-PCM Data
 const Speaker = require('speaker'); //Stream Raw-PCM Data ke Speaker
 const scrapper = require("youtube-scrapper"); //Scrapping (Ngambil Data kaya judul,thumbnail,link dari youtube)
-const { exec } = require('child_process'); //Library buat akses terminal di node.js
 const fs = require('fs'); //Buat ngotak ngatik directory/Folder
 const path = require('path'); //Buat ngecek/ngotak ngatik Path directory
 const { PassThrough } = require('stream'); //Buat passtrough data biar bisa di handle lebih enak
@@ -47,7 +46,8 @@ class AudioPlayer {
     this.ytData = null;
     this.url = null;
     this.audioFilePath = '';
-    this.downloadedAudioFilePath = '';
+    this.info = null;
+    this.options = null;
 
     this.ffmpegProcess = null;
   }
@@ -106,46 +106,51 @@ class AudioPlayer {
       //Get the data of the url, image and title from Youtube-Scrapper
       this.ytData = await getYoutubeData(music_name);
       this.url = this.ytData.url;
-      this.audioFilePath = path.resolve(__dirname, `download/${this.ytData.title.replace(/[^\w\s]/gi, '')}`);
+      //this.audioFilePath = path.resolve(__dirname, `download/${this.ytData.title.replace(/[^\w\s]/gi, '')}`);
+      this.audioFilePath = path.resolve(__dirname, `download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.flac`);
+     
+
       //Kenapa Pake REGEX(Regular Expression)? Kalo gk pake regex malah error gara gara kalo judulnya ada simbolnya
+      this.info = await ytdl.getInfo(this.url);
+      this.options = {
+          quality: 'highestaudio',
+          filter: 'audioonly',
+          format: 'flac'
+      };
+      //quality: 'highestaudio', filter: 'audioonly'
+      ytdl(this.url, this.options)
+      .pipe(fs.createWriteStream(this.audioFilePath))
+      .on("finish", () =>{
+          console.log("Downloading finished");
+          // Use ffmpeg to convert the FLAC file to PCM format and play through speaker
+          this.ffmpegProcess = ffmpeg(this.audioFilePath)
+            .audioCodec('pcm_s16le')
+            .format('s16le')
+            .audioBitrate(256)
+            .audioFrequency(44100)
+            .on('start', () => {
+              console.log('ffmpeg started');
+            })
+            .pipe(this.audioStream)
+            .on('end', () => {
+              console.log('Audio playback ended.');
+              this.audioStream.end();
+              fs.unlinkSync(this.audioFilePath); // Delete the temporary audio file
+            })
+            .on('error', (err) => {
+              console.error('Error during audio playback:', err.message);
+              this.audioStream.end();
+              fs.unlinkSync(this.audioFilePath); // Delete the temporary audio file
+            })
+            this.audioStream.pipe(this.speaker);
 
-     // Download audio using youtube-dl with the correct output template
-      exec(`youtube-dl -x --audio-format wav -o "${this.audioFilePath}.%(ext)s" ${this.url}`, (err, stdout, stderr) => {
-        if (err) {
-          console.error('Error downloading audio:', stderr);
-          return;
-        }
+            this.speaker.on('close', () => {
+              this.playing = false;
+            });
+     })
 
-        console.log('Audio downloaded:', stdout);
-
-        this.downloadedAudioFilePath = `${this.audioFilePath}.wav`;
-
-
-        this.ffmpegProcess = ffmpeg(this.downloadedAudioFilePath)
-          .audioCodec('pcm_s16le')
-          .format('wav')
-          .audioBitrate(256)
-          .audioFrequency(44100)
-          .on('start', () => {
-            console.log('ffmpeg started');
-          })
-          .pipe(this.audioStream)
-          .on('end', () => {
-            console.log('Audio playback ended.');
-            this.audioStream.end();
-            fs.unlinkSync(this.downloadedAudioFilePath); // Delete the temporary audio file
-          })
-          .on('error', (err) => {
-            console.error('Error during audio playback:', err.message);
-            this.audioStream.end();
-            fs.unlinkSync(this.downloadedAudioFilePath); // Delete the temporary audio file
-          })
-          this.audioStream.pipe(this.speaker);
-
-          this.speaker.on('close', () => {
-            this.playing = false;
-          });
-  });      
+     
+            
     })();
   }
 
