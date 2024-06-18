@@ -11,6 +11,7 @@ npm install youtube-scrapper
 ```
 
 Usage:
+
 ```javascript
 const youtube = require("./youtube");
 
@@ -28,6 +29,7 @@ const AudioPlayer = new youtube.AudioPlayer();
 ```
 
 Example:
+
 ```javascript
 const youtube = require("./youtube");
 
@@ -37,6 +39,7 @@ const AudioPlayer = new youtube.AudioPlayer();
       await AudioPlayer.playDownload("Porter Robinson Everything Goes On");
 })();
 ```
+
 
 Detailed Usage:
 
