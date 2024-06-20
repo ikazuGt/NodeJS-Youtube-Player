@@ -106,23 +106,25 @@ class AudioPlayer {
       //Get the data of the url, image and title from Youtube-Scrapper
       this.ytData = await getYoutubeData(music_name);
       this.url = this.ytData.url;
-      //this.audioFilePath = path.resolve(__dirname, `download/${this.ytData.title.replace(/[^\w\s]/gi, '')}`);
-      this.audioFilePath = path.resolve(__dirname, `download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.flac`);
-     
+      
+      if(!fs.existsSync("./download")){
+        fs.mkdirSync("./download"); //Check if a download folder exists, if not create one
+      }
+      this.audioFilePath = path.resolve(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`);
 
       //Kenapa Pake REGEX(Regular Expression)? Kalo gk pake regex malah error gara gara kalo judulnya ada simbolnya
       this.info = await ytdl.getInfo(this.url);
       this.options = {
           quality: 'highestaudio',
           filter: 'audioonly',
-          format: 'flac'
+          format: 'mp3'
       };
       //quality: 'highestaudio', filter: 'audioonly'
       ytdl(this.url, this.options)
       .pipe(fs.createWriteStream(this.audioFilePath))
       .on("finish", () =>{
           console.log("Downloading finished");
-          // Use ffmpeg to convert the FLAC file to PCM format and play through speaker
+          // Use ffmpeg to convert the mp3 file to PCM format and play through speaker
           this.ffmpegProcess = ffmpeg(this.audioFilePath)
             .audioCodec('pcm_s16le')
             .format('s16le')
