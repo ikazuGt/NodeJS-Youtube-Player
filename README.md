@@ -1,23 +1,32 @@
 How to use
 
-Install all the library in the require section
+## Install the Package
 
 ```batch
-npm install axios
-npm install ytdl-core
-npm install fluent-ffmpeg
-npm install speaker
-npm install youtube-scrapper
+npm install nodejs-youtube-player
 ```
-
-Usage:
+## Example:
 
 ```javascript
-const youtube = require("./youtube");
+const youtube = require("nodejs-youtube-player");
 
 const AudioPlayer = new youtube.AudioPlayer();
 
-(async () =>
+(async () => {
+      await AudioPlayer.playDownload("Porter Robinson Everything Goes On");
+})();
+```
+
+-----------------
+
+## Usage:
+
+```javascript
+const youtube = require("nodejs-youtube-player");
+
+const AudioPlayer = new youtube.AudioPlayer();
+
+(async () => {
       //We need to use await or else it will crash
       await AudioPlayer.stream("MUSIC NAME HERE"); //Method 1
       await AudioPlayer.playDownload("MUSIC NAME HERE"); //Method 2 //Use this one if you are having problem with the 1st method
@@ -30,23 +39,10 @@ const AudioPlayer = new youtube.AudioPlayer();
 
 
 
-Example:
-
-```javascript
-const youtube = require("./youtube");
-
-const AudioPlayer = new youtube.AudioPlayer();
-
-(async () =>
-      await AudioPlayer.playDownload("Porter Robinson Everything Goes On");
-})();
-```
-
-
 -----------------
 
 
-Detailed Usage:
+## Detailed Usage:
 
 
 Playing an Audio (Via streaming)
