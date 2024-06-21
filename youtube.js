@@ -93,69 +93,86 @@ class AudioPlayer {
   })();
   }
 
-  playDownload(music_name){
+  playDownload(music_name) {
     if (this.playing) {
       console.log('Already playing');
       return;
     }
-
+    console.log("Downloading Started");
     this.playing = true;
-
-    //Use the Async lambda so we can use await
-    (async () =>{
-      //Get the data of the url, image and title from Youtube-Scrapper
-      this.ytData = await getYoutubeData(music_name);
-      this.url = this.ytData.url;
-      
-      if(!fs.existsSync("./download")){
-        fs.mkdirSync("./download"); //Check if a download folder exists, if not create one
-      }
-      this.audioFilePath = path.resolve(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`);
-
-      //Kenapa Pake REGEX(Regular Expression)? Kalo gk pake regex malah error gara gara kalo judulnya ada simbolnya
-      this.info = await ytdl.getInfo(this.url);
-      this.options = {
+    this.audioStream = new Speaker(); // Initialize the speaker or any writable stream you are using
+  
+    (async () => {
+      try {
+        // Get the data of the url, image and title from Youtube-Scrapper
+        this.ytData = await getYoutubeData(music_name);
+        this.url = this.ytData.url;
+  
+        if (!fs.existsSync("./download")) {
+          fs.mkdirSync("./download");
+        }
+  
+        this.audioFilePath = path.resolve(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.flac`);
+  
+        // Fetch info from YouTube
+        this.info = await ytdl.getInfo(this.url);
+        this.options = {
           quality: 'highestaudio',
           filter: 'audioonly',
           format: 'mp3'
-      };
-      //quality: 'highestaudio', filter: 'audioonly'
-      ytdl(this.url, this.options)
-      .pipe(fs.createWriteStream(this.audioFilePath))
-      .on("finish", () =>{
-          console.log("Downloading finished");
-          // Use ffmpeg to convert the mp3 file to PCM format and play through speaker
-          this.ffmpegProcess = ffmpeg(this.audioFilePath)
-            .audioCodec('pcm_s16le')
-            .format('s16le')
-            .audioBitrate(256)
-            .audioFrequency(44100)
-            .on('start', () => {
-              console.log('ffmpeg started');
-            })
-            .pipe(this.audioStream)
-            .on('end', () => {
-              console.log('Audio playback ended.');
-              this.audioStream.end();
-              fs.unlinkSync(this.audioFilePath); // Delete the temporary audio file
-            })
-            .on('error', (err) => {
-              console.error('Error during audio playback:', err.message);
-              this.audioStream.end();
-              fs.unlinkSync(this.audioFilePath); // Delete the temporary audio file
-            })
-            this.audioStream.pipe(this.speaker);
-
-            this.speaker.on('close', () => {
+        };
+  
+        ytdl(this.url, this.options)
+          .pipe(fs.createWriteStream(this.audioFilePath))
+          .on("finish", () => {
+            console.log("Downloading finished");
+  
+            // Verify audioStream is a valid writable stream
+            if (!this.audioStream || typeof this.audioStream.write !== 'function') {
+              console.error('Invalid audioStream. It should be a writable stream.');
               this.playing = false;
+              return;
+            }
+  
+            // Use ffmpeg to convert the MP3 file to PCM format and play through speaker
+            this.ffmpegProcess = ffmpeg(this.audioFilePath)
+              .audioCodec('pcm_s16le')
+              .format('s16le')
+              .audioBitrate(256)
+              .audioFrequency(44100)
+              .on('start', () => {
+                console.log('ffmpeg started');
+              })
+              .on('error', (err) => {
+                console.error('Error during ffmpeg processing:', err.message);
+                this.audioStream.end();
+                fs.unlinkSync(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`); // Delete the temporary audio file
+                this.playing = false;
+              })
+              .pipe(this.audioStream, { end: true }) // Pipe to audioStream and close after
+              .on('end', () => {
+                console.log('Audio playback ended.');
+                this.audioStream.end();
+                fs.unlinkSync(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`); // Delete the temporary audio file
+                this.playing = false;
+              });
+  
+            this.audioStream.on('close', () => {
+              this.playing = false;
+              this.audioStream.end();
+              this.speaker.close();
             });
-     })
-
-     
-            
+          })
+          .on('error', (err) => {
+            console.error('Error during download:', err.message);
+            this.playing = false;
+          });
+      } catch (err) {
+        console.error('An error occurred:', err.message);
+        this.playing = false;
+      }
     })();
   }
-
   pause() {
     if (!this.playing) {
       console.log('Nothing is playing');
