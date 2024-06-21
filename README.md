@@ -29,8 +29,9 @@ const AudioPlayer = new youtube.AudioPlayer();
 (async () => {
       //We need to use await or else it will crash
       await AudioPlayer.stream("MUSIC NAME HERE"); //Method 1
-      await AudioPlayer.playDownload("MUSIC NAME HERE"); //Method 2 //Use this one if you are having problem with the 1st method
+      await AudioPlayer.playDownload("MUSIC NAME HERE"); //Method 2 //RECOMMENDED
       
+      AudioPlayer.SilentMode = true; //Disables all the console.log output
       AudioPlayer.pause(); //Pause the audio
       AudioPlayer.resume(); //Resume the paused audio
       AudioPlayer.stop(); //Stop the audio
@@ -68,4 +69,9 @@ AudioPlayer.resume();
 Stopping the Audio
 ```javascript
 AudioPlayer.stop();
+```
+
+Disabling all the Console.log(); output
+```javascript
+AudioPlayer.SilentMode = true; //false by default
 ```
