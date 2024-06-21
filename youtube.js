@@ -49,6 +49,7 @@ class AudioPlayer {
     this.info = null;
     this.options = null;
 
+    this.silentmode = false;
     this.ffmpegProcess = null;
   }
   
@@ -98,7 +99,8 @@ class AudioPlayer {
       console.log('Already playing');
       return;
     }
-    console.log("Downloading Started");
+    if(this.silentmode == false){console.log("Downloading Started");}
+
     this.playing = true;
     this.audioStream = new Speaker(); // Initialize the speaker or any writable stream you are using
   
@@ -112,7 +114,7 @@ class AudioPlayer {
           fs.mkdirSync("./download");
         }
   
-        this.audioFilePath = path.resolve(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.flac`);
+        this.audioFilePath = path.resolve(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`);
   
         // Fetch info from YouTube
         this.info = await ytdl.getInfo(this.url);
@@ -125,7 +127,7 @@ class AudioPlayer {
         ytdl(this.url, this.options)
           .pipe(fs.createWriteStream(this.audioFilePath))
           .on("finish", () => {
-            console.log("Downloading finished");
+            if(this.silentmode == false){console.log("Downloading finished");}
   
             // Verify audioStream is a valid writable stream
             if (!this.audioStream || typeof this.audioStream.write !== 'function') {
@@ -141,7 +143,7 @@ class AudioPlayer {
               .audioBitrate(256)
               .audioFrequency(44100)
               .on('start', () => {
-                console.log('ffmpeg started');
+                if(this.silentmode == false){console.log('ffmpeg started');}
               })
               .on('error', (err) => {
                 console.error('Error during ffmpeg processing:', err.message);
@@ -150,29 +152,31 @@ class AudioPlayer {
                 this.playing = false;
               })
               .pipe(this.audioStream, { end: true }) // Pipe to audioStream and close after
-              .on('end', () => {
-                console.log('Audio playback ended.');
-                this.audioStream.end();
-                fs.unlinkSync(`./download/${this.ytData.title.replace(/[^\w\s]/gi, '')}.mp3`); // Delete the temporary audio file
-                this.playing = false;
-              });
   
             this.audioStream.on('close', () => {
+              if(fs.existsSync(this.audioFilePath)){
+                if(this.silentmode == false){console.log('Audio playback ended');}
+                fs.unlinkSync(this.audioFilePath); // Delete the temporary audio file
+              }
               this.playing = false;
               this.audioStream.end();
               this.speaker.close();
             });
+
           })
           .on('error', (err) => {
             console.error('Error during download:', err.message);
             this.playing = false;
           });
+
       } catch (err) {
         console.error('An error occurred:', err.message);
         this.playing = false;
       }
     })();
   }
+
+  
   pause() {
     if (!this.playing) {
       console.log('Nothing is playing');
